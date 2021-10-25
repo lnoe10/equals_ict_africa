@@ -512,6 +512,23 @@ top_ten_indicators %>%
   ungroup() %>%
   arrange(sex, mean_year)
 
+# Timeline graph for average most recent and most out of date by indicator
+top_ten_indicators %>%
+  group_by(indicator, sex) %>%
+  summarize(latest_year = max(year, na.rm = TRUE), earliest_year = min(year, na.rm = TRUE)) %>%
+  ungroup() %>%
+  count(sex, latest_year)
+
+top_ten_indicators %>%
+  group_by(country, iso3c, sex) %>%
+  summarize(latest_year = max(year, na.rm = TRUE), earliest_year = min(year, na.rm = TRUE)) %>%
+  ungroup() %>%
+  pivot_longer(latest_year:earliest_year, names_to = "lat_or_early") %>%
+  count(sex, lat_or_early, value) %>%
+  filter(sex == "female") %>%
+  ggplot(aes(x = value, y = n, fill = lat_or_early)) +
+  geom_col(position = position_dodge2(preserve = "single"))
+
 # Average latest year by all countries
 top_ten_indicators %>% 
   group_by(country, iso3c, sex) %>%

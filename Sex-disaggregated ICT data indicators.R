@@ -379,14 +379,14 @@ top_ten_indicators %>%
 
 # grouped bar chart (have replicated in Excel)
 top_ten_indicators %>%
-  group_by(category, indicator, series, sex) %>%
+  group_by(category, indicator, sex) %>%
   summarize(num_countries = n_distinct(iso3c)) %>%
   ungroup() %>%
   mutate(indicator = case_when(
     str_detect(indicator, "Science, Technology") ~ "Percentage of graduates from Science, Technology, Engineering\nand Mathematics programmes in tertiary education",
     TRUE ~ indicator
   )) %>%
-  ggplot(aes(fill=sex, y=num_countries, x=indicator)) + 
+  ggplot(aes(fill=sex, y=num_countries, x=fct_rev(indicator))) + 
   geom_bar(position="dodge", stat="identity") +
   coord_flip() +
   scale_y_continuous(position = "right", limits = c(0,54), breaks = c(0, 10, 20, 30, 40, 50, 54)) +

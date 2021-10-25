@@ -91,7 +91,7 @@ int_use <- read_excel("Input/10. Individuals using the Internet by gender and ur
 # Time series SDG Database API data. As of 19 November, 2020,
 # Using Q4 version of 2020 SDG database https://unstats.un.org/sdgs/indicators/database/archive
 # Using static download of "Global SDG Indicators Database on 05 April 2021"
-# When replicating this, filter for series "IT_MOB_OWN"
+# When replicating this, filter for series "IT_MOB_OWN" or SDG indicator 5.b.1
 
 # For live API download, use the following code:
 ## Import number of observations, need to supply to API call to get all
@@ -127,91 +127,45 @@ mob_own_time <- read_csv("Input/sdg_database_ind_own_mobile.csv") %>%
          source = "SDG Database", category = "Access")
 
 
-### ICT Literacy & Skills ####
-# Most recent info
-# ALL THIS INFO FOR AFRICAN COUNTRIES IS ALREADY IN SDG DATABASE.
-# A MERGE OF THE BELOW WITH THE SDG DATABASE TURNS UP THE SAME VALUES
-# SO WE'RE FINE NOT USING THIS DATAFRAME
-
-# ITU correspondence with Martin Schaaper
-# Solution from here: https://debruine.github.io/posts/multi-row-headers/
-# First solution is enough
-#ind_names <- read_excel("Data/Input Data/ICT data/44. Individuals with ICT skills by type of skills by gender.xls", skip = 2, n_max = 2, col_names = FALSE) %>%
-#  t() %>% # transposes the data and turns it into a matrix
-#  as_tibble() %>% # turn it back to a tibble
-#  fill(V1) %>% # Fill first column down to line up indicator with Sex
-#  mutate(col_name = str_c(V1, V2, sep = "_"),
-#         col_name = case_when(
-#           V1 == "Economy name" ~ "Economy name",
-#           TRUE ~ col_name
-#         )) %>% # create column names
-#  # Add empty row to line up with columns when we read in just data.
-#  add_row(V1 = NA_character_, V2 = NA_character_, col_name = NA_character_) %>%
-#  # Convert to vector
-#  pull(col_name)
-#
-## Read in literacy data by skipping all headings, and use created vector
-## above as column names
-#literacy <- read_excel("Data/Input Data/ICT data/44. Individuals with ICT skills by type of skills by gender.xls", skip = 5, col_names = ind_names) %>%
-#  # Get rid of empty columns
-#  select(-starts_with("..."), -c("Economy name...2", "Economy name...3")) %>%
-#  rename(country = `Economy name...1`, year = Latest_year) %>%
-#  # Filter for just rows with country info
-#  filter(!is.na(country)) %>%
-#  mutate(iso3c = countrycode::countrycode(country, "country.name", "iso3c"),
-#         iso3c = case_when(
-#           country == "Kosovo" ~ "XKX",
-#           TRUE ~ iso3c
-#         )) %>%
-#  # Merge in countries on iso3c and keep all observations
-#  full_join(odw_master_codes %>% select(iso3c, country, incgroup, wbregion), by = c("iso3c")) %>%
-#  # Filter to just African countries, sub-saharan plus six north africa.
-#  # Should be 54. AU has 55 member countries, but no info exists on Sahrawi Republic
-#  filter(wbregion == "Sub-Saharan Africa" | iso3c %in% c("DZA", "DJI", "EGY", "LBY", "MAR", "TUN")) %>%
-#  select(-country.x) %>%
-#  rename(country = country.y) %>%
-#  pivot_longer(-c(country, iso3c, year, incgroup, wbregion), names_to = "series", values_to = "value") %>%
-#  separate(series, into = c("series", "sex"), sep = "_") %>%
-#  mutate(sex = tolower(sex), value = as.numeric(value),
-#         indicator = "ITU ICT skills and literacy",
-#         source = "ITU correspondence", category = "Skills") %>%
-#  # Only keep non-missing obs and after 2010
-#  filter(!is.na(value), year >= 2010) %>%
-#  # Calculate number of obs, will only be 1, but in case we get time-series later.
-#  group_by(series, iso3c, sex) %>%
-#  mutate(non_missing_obs = sum(!is.na(value), na.rm = TRUE)) %>%
-#  ungroup()
+#### ICT Literacy & Skills ####
 
 # Time series SDG Database API data. As of 19 November, 2020,
-# last update of API was 31 March 2020 but data from Martin Schaaper from April doesn't have any more recent info for African countries
-# Import number of observations, need to supply to API call to get all
-tot_elements <- fromJSON("https://unstats.un.org/SDGAPI/v1/sdg/Series/Data?seriesCode=SE_ADT_ACTS")$totalElements
+# Using Q4 version of 2020 SDG database https://unstats.un.org/sdgs/indicators/database/archive
+# Using static download of "Global SDG Indicators Database on 05 April 2021"
+# When replicating this, filter for SDG indicator 4.4.1
 
-# Use number of observations to import right dimensions of dataframe and clean up
-literacy_time <- fromJSON(str_c("https://unstats.un.org/SDGAPI/v1/sdg/Series/Data?seriesCode=SE_ADT_ACTS&pageSize=", as.character(tot_elements)), flatten = TRUE)$data %>%
-  mutate(iso3c = countrycode::countrycode(geoAreaName, "country.name", "iso3c"),
+# For live API download, use the following code:
+
+# # Import number of observations, need to supply to API call to get all
+# tot_elements <- fromJSON("https://unstats.un.org/SDGAPI/v1/sdg/Series/Data?seriesCode=SE_ADT_ACTS")$totalElements
+# 
+# # Use number of observations to import right dimensions of dataframe and clean up
+# literacy_time_raw <- fromJSON(str_c("https://unstats.un.org/SDGAPI/v1/sdg/Series/Data?seriesCode=SE_ADT_ACTS&pageSize=", as.character(tot_elements)), flatten = TRUE)$data %>%
+# Insert mob_own_time_raw instead of read_csv() call to static file
+literacy_time <- read_csv("Input/sdg_database_ict_literacy.csv") %>%
+  mutate(iso3c = countrycode::countrycode(GeoAreaName, "country.name", "iso3c"),
          iso3c = case_when(
-           geoAreaName == "Kosovo" ~ "XKX",
+           GeoAreaName == "Kosovo" ~ "XKX",
            TRUE ~ iso3c
          ),
-         value = as.numeric(value),
-         dimensions.Sex = case_when(
-           dimensions.Sex == "BOTHSEX" ~ "total",
-           TRUE ~ tolower(dimensions.Sex)
+         value = as.numeric(Value),
+         Sex = case_when(
+           Sex == "BOTHSEX" ~ "total",
+           TRUE ~ tolower(Sex)
          ),
-         `dimensions.Type of skill` = case_when(
-           `dimensions.Type of skill` == "ARSP"	~ "Using basic arithmetic formula in a spreadsheet",
-           `dimensions.Type of skill` == "CMFL"	~ "Copying or moving a file or folder",
-           `dimensions.Type of skill` == "COPA"	~ "Using copy and paste tools to duplicate or move information within a document",
-           `dimensions.Type of skill` == "EMAIL" ~ "Sending e-mails with attached files",
-           `dimensions.Type of skill` == "EPRS"	~ "Creating electronic presentations with presentation software",
-           `dimensions.Type of skill` == "INST"	~ "Connecting and installing new devices",
-           `dimensions.Type of skill` == "PCPR"	~ "Writing a computer program using a specialized programming language",
-           `dimensions.Type of skill` == "SOFT"	~ "Finding, downloading, installing and configuring software",
-           `dimensions.Type of skill` == "TRAF"	~ "Transferring files between a computer and other devices",
-           TRUE ~ `dimensions.Type of skill`
+         `Type of skill` = case_when(
+           `Type of skill` == "ARSP"	~ "Using basic arithmetic formula in a spreadsheet",
+           `Type of skill` == "CMFL"	~ "Copying or moving a file or folder",
+           `Type of skill` == "COPA"	~ "Using copy and paste tools to duplicate or move information within a document",
+           `Type of skill` == "EMAIL" ~ "Sending e-mails with attached files",
+           `Type of skill` == "EPRS"	~ "Creating electronic presentations with presentation software",
+           `Type of skill` == "INST"	~ "Connecting and installing new devices",
+           `Type of skill` == "PCPR"	~ "Writing a computer program using a specialized programming language",
+           `Type of skill` == "SOFT"	~ "Finding, downloading, installing and configuring software",
+           `Type of skill` == "TRAF"	~ "Transferring files between a computer and other devices",
+           TRUE ~ `Type of skill`
          )) %>%
-  select(iso3c, year = timePeriodStart, sex = dimensions.Sex, value, series = `dimensions.Type of skill`) %>%
+  select(iso3c, year = TimePeriod, sex = Sex, value, series = `Type of skill`) %>%
   # Merge in countries on iso3c and keep all observations
   full_join(odw_master_codes %>% select(iso3c, country, incgroup, wbregion), by = c("iso3c")) %>%
   # Filter to just African countries, sub-saharan plus six north africa.

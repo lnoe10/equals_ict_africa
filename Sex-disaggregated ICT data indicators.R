@@ -1,11 +1,11 @@
 library(tidyverse)
 library(readxl)
 library(jsonlite)
-setwd("C:/Users/lnoe/Documents/R")
+setwd("C:/Users/loren/Documents/GitHub/equals_ict_africa")
 
 ### Preparation ####
 # Import country groups
-odw_master_codes <- read_csv("Data/Input Data/2021 ODW Country and Region Codes.csv") %>%
+odw_master_codes <- read_csv("Input/2021 ODW Country and Region Codes.csv") %>%
   # Clean all variable names by converting to snake case
   janitor::clean_names() %>% 
   # Clear out extra lines at the bottom that just contain notes
@@ -23,7 +23,7 @@ odw_master_codes <- read_csv("Data/Input Data/2021 ODW Country and Region Codes.
 # ITU correspondence with Martin Schaaper
 # This file has just been published here https://www.itu.int/en/ITU-D/Statistics/Pages/stat/default.aspx
 # As of AUgust 20, 2020
-int_use <- read_excel("Data/Input Data/ICT data/10. Individuals using the Internet by gender and urban-rural location.xls", skip = 2) %>%
+int_use <- read_excel("Input/10. Individuals using the Internet by gender and urban-rural location.xls", skip = 2) %>%
   select(country = `Economy name`, year, total = Individuals, male = Male...6,
          female = Female...8) %>%
   mutate_at(c("total", "male", "female"), as.numeric) %>%
@@ -250,7 +250,7 @@ literacy_time <- fromJSON(str_c("https://unstats.un.org/SDGAPI/v1/sdg/Series/Dat
 
 ### Made and Received Digital Payments ####
 # From World Bank Findex. Acquired through Databank
-dig_payment <- read_csv("Data/Input Data/ICT data/made_or_received_digitalpayments.csv") %>%
+dig_payment <- read_csv("Input/made_or_received_digitalpayments.csv") %>%
   janitor::clean_names() %>%
   filter(!is.na(country_code)) %>%
   # Merge in countries on iso3c and keep all observations
@@ -295,7 +295,7 @@ dig_payment <- read_csv("Data/Input Data/ICT data/made_or_received_digitalpaymen
 # Use the first two series to create a percentage of male. Then treat
 # Level value for number of researchers in total as datapoint for "total" sex
 # Values for Female and Male will be percentages!
-researchers <- read_csv("Data/Input Data/ICT data/female_eng_tech_researchers.csv") %>%
+researchers <- read_csv("Input/female_eng_tech_researchers.csv") %>%
   janitor::clean_names() %>%
   # make wide so we can create male share of FTE researchers in engineering in engineering and tech
   pivot_wider(c(location, country, time), names_from = "indicator", values_from = value) %>%
@@ -334,7 +334,7 @@ researchers <- read_csv("Data/Input Data/ICT data/female_eng_tech_researchers.cs
 # by field of education (tertiary education)
 # As of June 2020, this was how to access series
 # Education --> Education --> Completion --> Distribution of tertiary graduates
-educ <- read_csv("Data/Input Data/ICT data/tertiary_graduates_stem_ict.csv") %>%
+educ <- read_csv("Input/tertiary_graduates_stem_ict.csv") %>%
   janitor::clean_names() %>%
   pivot_wider(c(location, country, time), names_from = edulit_ind, values_from = value) %>%
   select(iso3c = location, year = time, starts_with("FOS")) %>%
@@ -365,7 +365,7 @@ educ <- read_csv("Data/Input Data/ICT data/tertiary_graduates_stem_ict.csv") %>%
 # ILOSTAT
 # Series name: Employment by sex and occupation - ISCO level 2
 # Occupation (ISCO-08), 2 digit level: 25 - Information and communications technology professionals
-ict_professionals <- read_csv("Data/Input Data/ICT Data/ILO_ict_professionals.csv") %>%
+ict_professionals <- read_csv("Input/ILO_ict_professionals.csv") %>%
   janitor::clean_names() %>%
   select(country = ref_area_label, sex = sex_label, year = time, value = obs_value) %>%
   pivot_wider(c(country, year), names_from = sex, values_from = value) %>%
@@ -397,7 +397,7 @@ ict_professionals <- read_csv("Data/Input Data/ICT Data/ILO_ict_professionals.cs
 # ILOSTAT
 # Employment by sex and economic activity - ISIC level 2
 # 2 digit level: 61 - Telecommunications
-telecomms_professionals <- read_csv("Data/Input Data/ICT Data/ILO_telecomms_professionals.csv") %>%
+telecomms_professionals <- read_csv("Input/ILO_telecomms_professionals.csv") %>%
   janitor::clean_names() %>%
   select(country = ref_area_label, sex = sex_label, year = time, value = obs_value) %>%
   pivot_wider(c(country, year), names_from = sex, values_from = value) %>%

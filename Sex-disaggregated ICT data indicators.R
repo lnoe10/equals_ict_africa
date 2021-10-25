@@ -87,58 +87,36 @@ int_use <- read_excel("Input/10. Individuals using the Internet by gender and ur
 #         source = "ITU correspondence", category = "Access")
 
 #### Individuals owning a mobile phone ####
-# Most recent info
-# ALL THIS INFO FOR AFRICAN COUNTRIES IS ALREADY IN SDG DATABASE.
-# A MERGE OF THE BELOW WITH THE SDG DATABASE TURNS UP THE SAME VALUES
-# SO WE'RE FINE NOT USING THIS DATAFRAME
-## ITU correspondence with Martin Schaaper
-#mob_own <- read_excel("Data/Input Data/ICT data/36. Individuals owning a mobile cellular telephone by gender and urban rural location.xlsx", skip = 2) %>%
-#  select(country = `Economy name`, year, total = `All individuals`, male = Male...6,
-#         female = Female...8) %>%
-#  mutate_at(c("total", "male", "female"), as.numeric) %>%
-#  # Filter out remaining observations at bottom of table, do not contain
-#  # country information
-#  filter(!is.na(year)) %>%
-#  # Add country codes
-#  mutate(iso3c = countrycode::countrycode(country, "country.name", "iso3c"),
-#         iso3c = case_when(
-#           country == "Kosovo" ~ "XKX",
-#           TRUE ~ iso3c
-#         )) %>%
-#  # Merge in countries on iso3c and keep all observations
-#  full_join(odw_master_codes %>% select(iso3c, country, incgroup, wbregion), by = c("iso3c")) %>%
-#  # Filter to just African countries, sub-saharan plus six north africa.
-#  # Should be 54. AU has 55 member countries, but no info exists on Sahrawi Republic
-#  filter(wbregion == "Sub-Saharan Africa" | iso3c %in% c("DZA", "DJI", "EGY", "LBY", "MAR", "TUN")) %>%
-#  select(country = country.y, iso3c, year, total, male, female, incgroup, wbregion) %>%
-#  # Convert to long
-#  pivot_longer(-c(country, iso3c, year, incgroup, wbregion), names_to = "sex", values_to = "value") %>%
-#  # Only keep non-missing obs and after 2010
-#  filter(!is.na(value), year >= 2010)
 
 # Time series SDG Database API data. As of 19 November, 2020,
-# last update of API was 31 March 2020 but data from Martin Schaaper from April doesn't have any more recent info for African countries
-# Import number of observations, need to supply to API call to get all
-tot_elements <- fromJSON("https://unstats.un.org/SDGAPI/v1/sdg/Series/Data?seriesCode=IT_MOB_OWN")$totalElements
+# Using Q4 version of 2020 SDG database https://unstats.un.org/sdgs/indicators/database/archive
+# Using static download of "Global SDG Indicators Database on 05 April 2021"
+# When replicating this, filter for series "IT_MOB_OWN"
 
-# Use number of observations to import right deminsions of dataframe and clean up
-mob_own_time <- fromJSON(str_c("https://unstats.un.org/SDGAPI/v1/sdg/Series/Data?seriesCode=IT_MOB_OWN&pageSize=", as.character(tot_elements)), flatten = TRUE)$data %>%
-  mutate(iso3c = countrycode::countrycode(geoAreaName, "country.name", "iso3c"),
+# For live API download, use the following code:
+## Import number of observations, need to supply to API call to get all
+#tot_elements <- fromJSON("https://unstats.un.org/SDGAPI/v1/sdg/Series/Data?seriesCode=IT_MOB_OWN")$totalElements
+#
+## Use number of observations to import right dimensions of dataframe
+#mob_own_time_raw <- fromJSON(str_c("https://unstats.un.org/SDGAPI/v1/sdg/Series/Data?seriesCode=IT_MOB_OWN&pageSize=", as.character(tot_elements)), flatten = TRUE)$data %>%
+# Insert mob_own_time_raw instead of read_csv() call to static file
+mob_own_time <- read_csv("Input/sdg_database_ind_own_mobile.csv") %>%
+  mutate(iso3c = countrycode::countrycode(GeoAreaName, "country.name", "iso3c"),
          iso3c = case_when(
-           geoAreaName == "Kosovo" ~ "XKX",
+           GeoAreaName == "Kosovo" ~ "XKX",
            TRUE ~ iso3c
          ),
-         value = as.numeric(value),
-         dimensions.Sex = case_when(
-           dimensions.Sex == "BOTHSEX" ~ "total",
-           TRUE ~ tolower(dimensions.Sex)
+         value = as.numeric(Value),
+         Sex = case_when(
+           Sex == "BOTHSEX" ~ "total",
+           TRUE ~ tolower(Sex)
          )) %>%
   # Merge in countries on iso3c and keep all observations
   full_join(odw_master_codes %>% select(iso3c, country, incgroup, wbregion), by = c("iso3c")) %>%
   # Filter to just African countries, sub-saharan plus six north africa.
   # Should be 54. AU has 55 member countries, but no info exists on Sahrawi Republic
   filter(wbregion == "Sub-Saharan Africa" | iso3c %in% c("DZA", "DJI", "EGY", "LBY", "MAR", "TUN")) %>%
-  select(country, iso3c, year = timePeriodStart, sex = dimensions.Sex, value, incgroup, wbregion) %>%
+  select(country, iso3c, year = TimePeriod, sex = Sex, value, incgroup, wbregion) %>%
   # Only keep non-missing obs and after 2010
   filter(!is.na(value), year >= 2010) %>%
   # Calculate number of obs.

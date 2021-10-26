@@ -569,6 +569,15 @@ top_ten_indicators %>%
   ungroup() %>%
   arrange(desc(num_countries))
 
+# Table for brief on number of observations per indicator
+top_ten_indicators %>%
+  group_by(iso3c, category, indicator, sex) %>%
+  summarize(actual_missing_obs = round(mean(non_missing_obs, na.rm = TRUE), digits = 0)) %>%
+  ungroup() %>%
+  count(category, indicator, sex, actual_missing_obs) %>% 
+  filter(sex == "female") %>% 
+  pivot_wider(id_cols = c(category, indicator), names_from = actual_missing_obs, values_from = n)
+
 # Countries with most/least observations
 top_ten_indicators %>%
   filter(non_missing_obs >= 2) %>%
